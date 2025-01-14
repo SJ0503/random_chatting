@@ -9,7 +9,7 @@ config = Config(".env")
 # .env 파일에서 DATABASE_URL 값을 가져오기
 # DATABASE_URL은 데이터베이스 연결 정보 (예: MySQL, PostgreSQL, SQLite 등)를 포함합니다.
 # 예: mysql+mysqlconnector://username:password@host:port/database
-DATABASE_URL = config("DATABASE_URL")
+DATABASE_URL = config("database_url")
 
 # 데이터베이스 연결 엔진 생성
 # create_engine은 SQLAlchemy의 핵심 객체로, 데이터베이스와의 실제 연결을 처리합니다.

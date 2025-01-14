@@ -23,4 +23,3 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True  # SQLAlchemy 객체를 Pydantic 모델로 변환
-        orm_mode = True  # SQLAlchemy ORM 객체를 변환 가능하게 설정
