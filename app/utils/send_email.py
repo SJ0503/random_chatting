@@ -39,9 +39,5 @@ def send_email(to_email: str, subject: str, body: str):
         print("[ERROR] SMTP 오류 발생")
         print(f"[DEBUG] 상세 정보: {e}")
         raise
-    except Exception as e:
-        print("[ERROR] 예상치 못한 오류 발생")
-        print(f"[DEBUG] 상세 정보: {e}")
-        raise
     finally:
         print("[DEBUG] 이메일 전송 프로세스 종료")

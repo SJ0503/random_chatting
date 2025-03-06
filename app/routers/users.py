@@ -22,7 +22,7 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     )
     db.add(new_user)
     db.commit()
-    db.refresh(new_user)  # db에 저장된 새 사용자 반환
+    db.refresh(new_user)  # db에 저장된 새 사용자 반환환환
 
     return new_user
 
@@ -36,7 +36,7 @@ def send_verification_code(email: str, db: Session = Depends(get_db)):
     # 이메일 중복 확인
     existing_user = db.query(models.User).filter(models.User.user_email == email).first()
     if existing_user:
-        raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다")
+         return {"message": "이미 등록된 이메일입니다."}
 
     # 인증번호 생성
     verification_code = auth.generate_verification_code(email)
