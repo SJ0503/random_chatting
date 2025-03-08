@@ -22,7 +22,7 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     )
     db.add(new_user)
     db.commit()
-    db.refresh(new_user)  # db에 저장된 새 사용자 반환환환
+    db.refresh(new_user)  # db에 저장된 새 사용자 반환환환환한환환
 
     return new_user
 
