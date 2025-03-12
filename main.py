@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import users
+from app.routers import users, kakao_users
 import os
 
 # FastAPI 앱 생성
@@ -20,6 +20,9 @@ app.add_middleware(
 
 # 사용자 라우터 등록
 app.include_router(users.router)
+app.include_router(kakao_users.router)
+
+
 
 @app.get("/")
 def read_root():

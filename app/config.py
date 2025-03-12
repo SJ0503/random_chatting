@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     kakao_userInfo_url : str
     kakao_client_url : str
     redirect_url : str
+    kakao_auth_url : str
+
 
     class Config:
         env_file = ".env"
