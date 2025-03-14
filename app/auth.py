@@ -3,6 +3,8 @@ import random
 import string
 import redis
 from app.config import settings
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
 
 
 # Redis 클라이언트 설정
@@ -33,10 +35,6 @@ def is_email_verified(email: str) -> bool:
     이메일 인증 상태 확인
     """
     return redis_client.get(f"verified:{email}") == b"true"
-
-
-
-
 
 # 비밀번호 해싱
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

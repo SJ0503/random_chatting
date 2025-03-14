@@ -25,6 +25,15 @@ def register_email_user(user: schemas.UserCreate, db: Session = Depends(get_db))
 
     return new_user
 
+# ✅ 로그인 엔드포인트
+@router.post("/login")
+def check_email(email: str, db: Session = Depends(get_db)):
+    existing_user_email = db.query(models.User).all(models.User.user_email == email).first()
+    if existing_user_email:
+        raise HTTPException(status_code=400, detail="이미 존재하는 이멜입니다다")
+    # t수정합시다 이거 아닙니다.
+    return existing_user_email
+
 
 # ✅ 이메일 인증번호 전송 엔드포인트
 @router.post("/send-verification-code")
