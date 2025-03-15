@@ -1,10 +1,83 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from app import models, schemas, auth
 from app.database import get_db
 from app.utils.send_email import send_email
+from app.config import settings
+import requests
+
 
 router = APIRouter()
+
+KAKAO_TOKEN_URL = settings.kakao_token_url
+KAKAO_USERINFO_URL = settings.kakao_userInfo_url
+KAKAO_CLIENT_ID = settings.kakao_client_url
+REDIRECT_URI = settings.redirect_url
+KAKAO_AUTH_URL = settings.kakao_auth_url
+
+# ✅ JWT 설정
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+REFRESH_TOKEN_EXPIRE_DAYS = 7
+
+
+@router.post("/login")
+def login(data: schemas.LoginRequest, response: Response, db: Session = Depends(get_db)):
+    """
+    ✅ 이메일 & 카카오 로그인 처리
+    """
+    if data.login_type == "email":
+        # ✅ 이메일 로그인 처리
+        user = db.query(models.User).filter(models.User.user_email == data.email).first()
+        if not user or not auth.verify_password(data.password, user.user_password):
+            raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 올바르지 않습니다.")
+
+    elif data.login_type == "kakao":
+        # ✅ 카카오 로그인 처리
+        token_response = requests.post(
+            KAKAO_TOKEN_URL,
+            data={
+                "grant_type": "authorization_code",
+                "client_id": KAKAO_CLIENT_ID,
+                "redirect_uri": REDIRECT_URI,
+                "code": data.code,
+            },
+        ).json()
+
+        if "access_token" not in token_response:
+            raise HTTPException(status_code=400, detail="카카오 인증 실패")
+
+        access_token = token_response["access_token"]
+
+        # ✅ 카카오 사용자 정보 요청
+        user_info = requests.get(
+            KAKAO_USERINFO_URL,
+            headers={"Authorization": f"Bearer {access_token}"}
+        ).json()
+
+        kakao_id = str(user_info.get("id"))
+        if not kakao_id:
+            raise HTTPException(status_code=400, detail="카카오 사용자 정보 조회 실패")
+
+        # ✅ DB에서 사용자 확인
+        user = db.query(models.User).filter(models.User.user_kakao_id == kakao_id).first()
+        if not user:
+            return {"isNewUser": True, "kakao_id": kakao_id}  # 신규 사용자 → 회원가입 진행
+
+    # ✅ JWT + Refresh Token 발급
+    access_token = auth.create_access_token(data={"sub": user.user_id})
+    refresh_token = auth.create_refresh_token(data={"sub": user.user_id})
+
+    # ✅ Refresh Token을 httpOnly Cookie에 저장
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="Lax",
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+    )
+
+    return {"accessToken": access_token}
 
 # ✅ 이메일 회원가입 엔드포인트
 @router.post("/register", response_model=schemas.UserResponse)

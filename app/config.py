@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     kakao_client_url : str
     redirect_url : str
     kakao_auth_url : str
+    jwt_secret_key : str
 
 
     class Config:

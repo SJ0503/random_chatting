@@ -23,6 +23,7 @@
 
 
 from app.config import settings
+import secrets
 
 # 환경 변수 값 출력
 print("SMTP_SERVER:", settings.smtp_server)
@@ -39,4 +40,4 @@ print("DATABASE_URL:", os.getenv("database_url"))
 print("SMTP_SERVER:", os.getenv("smtp_server"))
 print("SMTP_PORT:", os.getenv("smtp_port"))
 
-
+print(secrets.token_hex(32))

@@ -11,9 +11,16 @@ class UserCreate(BaseModel):
     user_age: int = None  # 나이 (선택사항)
     user_region: str= None  # 거주 지역 (선택사항)
 
-# ✅ 카카오 로그인 요청 스키마 (인가 코드 받는 요청)
-class KakaoTokenRequest(BaseModel):
-    code: str  # 카카오에서 받은 인가 코드
+# ✅ 이메일 & 카카오 로그인 요청 스키마
+class LoginRequest(BaseModel):
+    login_type: str  # "email" 또는 "kakao"
+    email: Optional[EmailStr] = None  # 이메일 로그인 시 사용
+    password: Optional[str] = None  # 이메일 로그인 시 사용
+    code: Optional[str] = None  # 카카오 로그인 시 사용 (인가 코드)
+
+# ✅ JWT 토큰 응답 스키마
+class TokenResponse(BaseModel):
+    accessToken: str
 
 # ✅ 카카오 회원가입 요청 스키마
 class KakaoRegisterRequest(BaseModel):

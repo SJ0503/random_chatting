@@ -16,7 +16,7 @@ KAKAO_AUTH_URL = settings.kakao_auth_url
 
 # ✅ 카카오 로그인 엔드포인트
 @router.post("/kakao/token")
-def kakao_login(data: schemas.KakaoTokenRequest, db: Session = Depends(get_db)):
+def kakao_login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
     token_response = requests.post(
         KAKAO_TOKEN_URL,
         data={
