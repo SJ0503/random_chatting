@@ -15,6 +15,8 @@ KAKAO_CLIENT_ID = settings.kakao_client_url
 REDIRECT_URI = settings.redirect_url
 KAKAO_AUTH_URL = settings.kakao_auth_url
 
+# print(settings)
+
 # ✅ JWT 설정
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
@@ -25,6 +27,7 @@ def login(data: schemas.LoginRequest, response: Response, db: Session = Depends(
     """
     ✅ 이메일 & 카카오 로그인 처리
     """
+    # print(data)
     if data.login_type == "email":
         # ✅ 이메일 로그인 처리
         user = db.query(models.User).filter(models.User.user_email == data.email).first()
@@ -32,6 +35,7 @@ def login(data: schemas.LoginRequest, response: Response, db: Session = Depends(
             raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 올바르지 않습니다.")
 
     elif data.login_type == "kakao":
+        # print("kakao로그인 처리 실행", KAKAO_TOKEN_URL)
         # ✅ 카카오 로그인 처리
         token_response = requests.post(
             KAKAO_TOKEN_URL,
