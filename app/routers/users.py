@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from sqlalchemy.orm import Session
 from app import models, schemas, auth
 from app.database import get_db
@@ -58,30 +58,39 @@ def login(data: schemas.LoginRequest, response: Response, db: Session = Depends(
             headers={"Authorization": f"Bearer {access_token}"}
         ).json()
 
-        kakao_id = str(user_info.get("id"))
+        kakao_id = str(user_info.get("id"))  # 카카오 ID를 문자열로 변환
         if not kakao_id:
             raise HTTPException(status_code=400, detail="카카오 사용자 정보 조회 실패")
 
-        # ✅ DB에서 사용자 확인
+        # ✅ DB에서 카카오 사용자 확인
         user = db.query(models.User).filter(models.User.user_kakao_id == kakao_id).first()
         if not user:
             return {"isNewUser": True, "kakao_id": kakao_id}  # 신규 사용자 → 회원가입 진행
 
-    # ✅ JWT + Refresh Token 발급
-    access_token = auth.create_access_token(data={"sub": user.user_id})
+ # ✅ JWT + Refresh Token 발급
+    access_token = auth.create_access_token(data={"sub": user.user_id, "nickname": user.user_nickname})
     refresh_token = auth.create_refresh_token(data={"sub": user.user_id})
 
-    # ✅ Refresh Token을 httpOnly Cookie에 저장
+    # ✅ Refresh Token을 HTTP-Only Cookie에 저장
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
+        secure=True,  # HTTPS 환경에서만 쿠키 전송 (개발 단계에서는 False로 테스트 가능)
         samesite="Lax",
-        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,  # 7일 유지
     )
 
-    return {"accessToken": access_token}
+    return {
+        "accessToken": access_token,
+        "user": {
+            "user_id": user.user_id,
+            "nickname": user.user_nickname,
+            "age": user.user_age,
+            "gender": user.user_gender,
+            "region": user.user_region,
+        }
+    }
 
 # ✅ 이메일 회원가입 엔드포인트
 @router.post("/register", response_model=schemas.UserResponse)
@@ -102,14 +111,29 @@ def register_email_user(user: schemas.UserCreate, db: Session = Depends(get_db))
 
     return new_user
 
-# ✅ 로그인 엔드포인트
-@router.post("/login")
-def check_email(email: str, db: Session = Depends(get_db)):
-    existing_user_email = db.query(models.User).all(models.User.user_email == email).first()
-    if existing_user_email:
-        raise HTTPException(status_code=400, detail="이미 존재하는 이멜입니다다")
-    # t수정합시다 이거 아닙니다.
-    return existing_user_email
+@router.post("/refresh-token")
+def refresh_token(request: Request, response: Response, db: Session = Depends(get_db)):
+    """
+    ✅ Refresh Token을 사용하여 새로운 Access Token 발급
+    """
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="리프레시 토큰이 없습니다.")
+
+    # ✅ 리프레시 토큰 검증
+    payload = auth.verify_token(refresh_token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="유효하지 않은 리프레시 토큰입니다.")
+
+    user_id = payload.get("sub")
+    user = db.query(models.User).filter(models.User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+
+    # ✅ 새 Access Token 발급
+    new_access_token = auth.create_access_token(data={"sub": user.user_id, "nickname": user.user_nickname})
+
+    return {"accessToken": new_access_token}
 
 
 # ✅ 이메일 인증번호 전송 엔드포인트
