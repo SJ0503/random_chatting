@@ -11,7 +11,7 @@ from fastapi import HTTPException, Depends
 # ✅ JWT 설정
 SECRET_KEY = settings.jwt_secret_key
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 액세스 토큰 만료 시간 (30분)
+ACCESS_TOKEN_EXPIRE_MINUTES = 1  # 액세스 토큰 만료 시간 (30분)
 REFRESH_TOKEN_EXPIRE_DAYS = 7  # 리프레시 토큰 만료 시간 (7일)
 
 

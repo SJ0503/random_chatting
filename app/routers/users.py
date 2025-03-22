@@ -18,7 +18,7 @@ KAKAO_AUTH_URL = settings.kakao_auth_url
 # print(settings)
 
 # ✅ JWT 설정
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 1
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 
@@ -91,6 +91,15 @@ def login(data: schemas.LoginRequest, response: Response, db: Session = Depends(
             "region": user.user_region,
         }
     }
+
+@router.post("/logout")
+def logout(response: Response):
+    """
+    ✅ 로그아웃: Refresh Token 쿠키 제거
+    """
+    response.delete_cookie("refresh_token")
+    return {"message": "로그아웃되었습니다."}
+
 
 # ✅ 이메일 회원가입 엔드포인트
 @router.post("/register", response_model=schemas.UserResponse)
