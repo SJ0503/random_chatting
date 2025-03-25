@@ -85,10 +85,13 @@ def login(data: schemas.LoginRequest, response: Response, db: Session = Depends(
         "accessToken": access_token,
         "user": {
             "user_id": user.user_id,
+            "user_email":user.user_email,
             "nickname": user.user_nickname,
             "age": user.user_age,
             "gender": user.user_gender,
             "region": user.user_region,
+            "type": user.user_login_type
+            
         }
     }
 
@@ -107,13 +110,14 @@ def register_email_user(user: schemas.UserCreate, db: Session = Depends(get_db))
     hashed_password = auth.hash_password(user.user_password)
 
     new_user = models.User(
-        user_nickname=user.user_nickname,
-        user_email=user.user_email,
-        user_password=hashed_password,
-        user_gender=user.user_gender,
-        user_age=user.user_age,
-        user_region=user.user_region
-    )
+    user_nickname=user.user_nickname,
+    user_email=user.user_email,
+    user_password=hashed_password,
+    user_gender=user.user_gender,
+    user_age=user.user_age,
+    user_region=user.user_region,
+    user_login_type="email"
+)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)

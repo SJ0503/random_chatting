@@ -1,6 +1,11 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Enum
 from sqlalchemy.sql import func
 from app.database import Base
+import enum
+
+class LoginType(str, enum.Enum):
+    email = "email"
+    kakao = "kakao"
 
 class User(Base):
     __tablename__ = "users"  # 테이블 이름
@@ -17,6 +22,7 @@ class User(Base):
     user_updated_at = Column(DateTime, onupdate=func.now())  # 계정 수정 시간 (자동 갱신)
     user_last_login = Column(DateTime, default=None)  # 마지막 로그인 시간 (NULL 허용)
     user_kakao_id = Column(String(255), unique=True, nullable=True)  # 카카오 계정 고유 ID (고유값, NULL 허용)
+    user_login_type = Column(Enum(LoginType), nullable=False)
 
     def __repr__(self):
         return f"<User(user_id={self.user_id}, user_email={self.user_email}, user_nickname={self.user_nickname})>"

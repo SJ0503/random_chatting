@@ -65,7 +65,8 @@ def register_kakao_user(user: schemas.KakaoRegisterRequest, db: Session = Depend
         user_gender=user.user_gender,
         user_age=user.user_age,
         user_region=user.user_region,
-        user_password=None  # 카카오는 비밀번호 없음
+        user_password=None,  # 카카오는 비밀번호 없음
+        user_login_type="kakao"
     )
     db.add(new_user)
     db.commit()
