@@ -14,8 +14,8 @@ class UserCreate(BaseModel):
 # ✅ 이메일 & 카카오 로그인 요청 스키마
 class LoginRequest(BaseModel):
     login_type: str  # "email" 또는 "kakao"
-    email: Optional[EmailStr] = None  # 이메일 로그인 시 사용
-    password: Optional[str] = None  # 이메일 로그인 시 사용
+    user_email: Optional[EmailStr] = None  # 이메일 로그인 시 사용
+    user_password: Optional[str] = None  # 이메일 로그인 시 사용
     code: Optional[str] = None  # 카카오 로그인 시 사용 (인가 코드)
 
 # ✅ JWT 토큰 응답 스키마
@@ -41,6 +41,12 @@ class UserResponse(BaseModel):
     user_region: Optional[str] = None  # 거주지 (선택)
     user_created_at: Optional[datetime] = None  # 생성 시간
     user_last_login: Optional[datetime] = None  # 마지막 로그인 시간
+
+# ✅ 회원정보 수정스키마
+class UserUpdate(BaseModel):
+    user_password: Optional[str] = None
+    user_age: Optional[int] = None
+    user_region: Optional[str] = None
 
     class Config:
         from_attributes = True  # SQLAlchemy ORM 객체를 Pydantic 모델로 변환
