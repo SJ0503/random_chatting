@@ -41,6 +41,9 @@ class UserResponse(BaseModel):
     user_region: Optional[str] = None  # 거주지 (선택)
     user_created_at: Optional[datetime] = None  # 생성 시간
     user_last_login: Optional[datetime] = None  # 마지막 로그인 시간
+    user_last_logout : Optional[datetime] = None  # 마지막 로그인 시간
+    user_kakao_id: Optional[int] = None  # 카카오 ID (선택)
+
 
 # ✅ 회원정보 수정스키마
 class UserUpdate(BaseModel):

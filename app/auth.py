@@ -9,7 +9,7 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi import HTTPException, Depends
 
 # ✅ JWT 설정
-SECRET_KEY = settings.jwt_secret_key
+SECRET_KEY = settings.jwt_secret_key.strip()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 액세스 토큰 만료 시간 (30분)
 REFRESH_TOKEN_EXPIRE_DAYS = 7  # 리프레시 토큰 만료 시간 (7일)
@@ -48,8 +48,9 @@ def verify_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except JWTError:
-        return None  
+    except JWTError as e:
+        print("JWT 검증 오류:", e)  # 🔍 에러 출력
+        return None 
 
 # Redis 클라이언트 설정
 redis_client = redis.StrictRedis(host=settings.redis_host, port=settings.redis_port, db=0)
@@ -79,3 +80,7 @@ def is_email_verified(email: str) -> bool:
     이메일 인증 상태 확인
     """
     return redis_client.get(f"verified:{email}") == b"true"
+
+def debug_secret():
+    return SECRET_KEY
+

@@ -7,6 +7,9 @@ from app.config import settings
 from app.dependencies import get_current_user
 import requests
 from datetime import datetime
+from pytz import timezone
+kst = timezone("Asia/Seoul")
+now_kst = datetime.now(kst)
 
 router = APIRouter()
 
@@ -55,8 +58,13 @@ def login(data: schemas.LoginRequest, response: Response, db: Session = Depends(
         if not user:
             return {"isNewUser": True, "kakao_id": kakao_id}
 
-    access_token = auth.create_access_token(data={"sub": user.user_id, "nickname": user.user_nickname})
-    refresh_token = auth.create_refresh_token(data={"sub": user.user_id})
+    # ✅ 로그인 성공 시 마지막 로그인 시간 기록
+    user.user_last_login = datetime.now(now_kst)
+    user.user_is_active = 1
+    db.commit()
+
+    access_token = auth.create_access_token(data={"sub": str(user.user_id), "nickname": user.user_nickname})
+    refresh_token = auth.create_refresh_token(data={"sub": str(user.user_id)})
 
     response.set_cookie(
         key="refresh_token",
@@ -66,7 +74,6 @@ def login(data: schemas.LoginRequest, response: Response, db: Session = Depends(
         samesite="Lax",
         max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
     )
-    print(access_token)
     return {
         "accessToken": access_token,
         "user": {
@@ -81,7 +88,15 @@ def login(data: schemas.LoginRequest, response: Response, db: Session = Depends(
     }
 
 @router.post("/logout")
-def logout(response: Response):
+def logout(response: Response, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    # ✅ 현재 로그인된 사용자 가져오기
+    user = db.query(models.User).filter(models.User.user_id == current_user.user_id).first()
+
+    if user:
+        user.user_is_active = 0
+        user.user_last_logout = datetime.now(now_kst)
+        db.commit()
+
     response.delete_cookie("refresh_token")
     return {"message": "로그아웃되었습니다."}
 
@@ -163,7 +178,7 @@ def update_user(data: schemas.UserUpdate, db: Session = Depends(get_db), current
     if data.user_region:
         user.user_region = data.user_region
 
-    user.user_updated_at = datetime.utcnow()
+    user.user_updated_at = datetime.now(now_kst)
 
     db.commit()
     return {"message": "회원 정보가 수정되었습니다."}

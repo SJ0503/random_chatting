@@ -17,10 +17,11 @@ class User(Base):
     user_gender = Column(String(10), nullable=True)  # 성별 (NULL 허용)
     user_region = Column(String(100), nullable=True)  # 거주 지역 (NULL 허용)
     user_password = Column(String(255), nullable=True)  # 비밀번호 (NULL 허용)
-    user_is_active = Column(Boolean, default=True)  # 계정 활성화 상태 (기본값: True)
+    user_is_active = Column(Integer, default=True)  # 계정 활성화 상태 (기본값: True)
     user_created_at = Column(DateTime, server_default=func.now())  # 계정 생성 시간 (기본값: 현재 시간)
     user_updated_at = Column(DateTime, onupdate=func.now())  # 계정 수정 시간 (자동 갱신)
     user_last_login = Column(DateTime, default=None)  # 마지막 로그인 시간 (NULL 허용)
+    user_last_logout =  Column(DateTime, default=None)  # 마지막 로그인 시간 (NULL 허용)
     user_kakao_id = Column(String(255), unique=True, nullable=True)  # 카카오 계정 고유 ID (고유값, NULL 허용)
     user_login_type = Column(Enum(LoginType), nullable=False)
 

@@ -3,6 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from app.routers import users, kakao_users
 import os
+from dotenv import load_dotenv
+from app.config import settings
+
+
 
 app = FastAPI()
 
@@ -15,6 +19,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+load_dotenv()  # ✅ .env 파일 읽기
+
 
 # ✅ 라우터 등록
 app.include_router(users.router)
@@ -48,7 +55,9 @@ def custom_openapi():
     return app.openapi_schema
 
 app.openapi = custom_openapi
+print("🚀 Loaded SECRET_KEY:",settings.jwt_secret_key.strip().replace(" ",""))
 
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+

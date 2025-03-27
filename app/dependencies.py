@@ -11,7 +11,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="인증 정보가 없습니다.")
-
+    
     token = auth_header.split(" ")[1]
     payload = verify_token(token)
     if not payload:
