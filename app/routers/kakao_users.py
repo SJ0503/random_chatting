@@ -4,6 +4,10 @@ import requests
 from app import models, schemas
 from app.database import get_db
 from app.config import settings
+from datetime import datetime, timedelta
+from pytz import timezone
+kst = timezone("Asia/Seoul")
+now_kst = datetime.now(kst).replace(tzinfo=None)
 
 router = APIRouter()
 
@@ -66,7 +70,7 @@ def register_kakao_user(user: schemas.KakaoRegisterRequest, db: Session = Depend
         user_age=user.user_age,
         user_region=user.user_region,
         user_password=None,  # 카카오는 비밀번호 없음
-        user_login_type="kakao"
+        user_login_type="kakao",
     )
     db.add(new_user)
     db.commit()

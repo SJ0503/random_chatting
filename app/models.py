@@ -24,6 +24,7 @@ class User(Base):
     user_last_logout =  Column(DateTime, default=None)  # 마지막 로그인 시간 (NULL 허용)
     user_kakao_id = Column(String(255), unique=True, nullable=True)  # 카카오 계정 고유 ID (고유값, NULL 허용)
     user_login_type = Column(Enum(LoginType), nullable=False)
+    user_delete_time = Column(DateTime, default=None)  # 탈퇴시각
 
     def __repr__(self):
         return f"<User(user_id={self.user_id}, user_email={self.user_email}, user_nickname={self.user_nickname})>"

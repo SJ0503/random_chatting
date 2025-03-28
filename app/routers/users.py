@@ -6,10 +6,10 @@ from app.utils.send_email import send_email
 from app.config import settings
 from app.dependencies import get_current_user
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from pytz import timezone
 kst = timezone("Asia/Seoul")
-now_kst = datetime.now(kst)
+now_kst = datetime.now(kst).replace(tzinfo=None)
 
 router = APIRouter()
 
@@ -24,6 +24,7 @@ REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 @router.post("/login")
 def login(data: schemas.LoginRequest, response: Response, db: Session = Depends(get_db)):
+
     if data.login_type == "email":
         user = db.query(models.User).filter(models.User.user_email == data.user_email).first()
         if not user or not auth.verify_password(data.user_password, user.user_password):
@@ -57,9 +58,13 @@ def login(data: schemas.LoginRequest, response: Response, db: Session = Depends(
         user = db.query(models.User).filter(models.User.user_kakao_id == kakao_id).first()
         if not user:
             return {"isNewUser": True, "kakao_id": kakao_id}
+        
+    if user.user_delete_time:
+            raise HTTPException(status_code=403, detail="탈퇴된 아이디 입니다. \n(탈퇴 시간 기준 24시간 후에 재가입 가능)")
+
 
     # ✅ 로그인 성공 시 마지막 로그인 시간 기록
-    user.user_last_login = datetime.now(now_kst)
+    user.user_last_login = now_kst
     user.user_is_active = 1
     db.commit()
 
@@ -94,7 +99,7 @@ def logout(response: Response, db: Session = Depends(get_db), current_user=Depen
 
     if user:
         user.user_is_active = 0
-        user.user_last_logout = datetime.now(now_kst)
+        user.user_last_logout = now_kst
         db.commit()
 
     response.delete_cookie("refresh_token")
@@ -102,6 +107,7 @@ def logout(response: Response, db: Session = Depends(get_db), current_user=Depen
 
 @router.post("/register", response_model=schemas.UserResponse)
 def register_email_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    
     hashed_password = auth.hash_password(user.user_password)
 
     new_user = models.User(
@@ -141,8 +147,17 @@ def refresh_token(request: Request, response: Response, db: Session = Depends(ge
 @router.post("/send-verification-code")
 def send_verification_code(email: str, db: Session = Depends(get_db)):
     existing_user = db.query(models.User).filter(models.User.user_email == email).first()
+    
+       # ✅ 기존 탈퇴 사용자라면 24시간 제한 확인
     if existing_user:
-        return {"message": "이미 등록된 이메일입니다."}
+        if existing_user.user_delete_time:
+            time_since_deleted = now_kst - existing_user.user_delete_time
+            if time_since_deleted< timedelta(days=1):
+                print(timedelta)
+                raise HTTPException(status_code=403, detail="탈퇴 후 24시간 이내에는 재가입할 수 없습니다.")
+        else:
+            raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다.")
+        
 
     verification_code = auth.generate_verification_code(email)
 
@@ -178,7 +193,25 @@ def update_user(data: schemas.UserUpdate, db: Session = Depends(get_db), current
     if data.user_region:
         user.user_region = data.user_region
 
-    user.user_updated_at = datetime.now(now_kst)
-
+    user.user_updated_at = now_kst
     db.commit()
     return {"message": "회원 정보가 수정되었습니다."}
+
+@router.patch("/delete-user")
+def delete_user(
+    response: Response,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    ✅ 탈퇴 요청 → user_delete_time에 현재 시간 기록 + 리프레시 토큰 제거
+    """
+    if current_user.user_delete_time:
+        raise HTTPException(status_code=400, detail="이미 탈퇴한 사용자입니다.")
+
+    # ✅ 탈퇴 시간 기록
+    current_user.user_delete_time = now_kst  # 또는 datetime.utcnow()
+
+    db.commit()
+
+    return {"message": "탈퇴 처리 완료 (24시간 이내 재가입 불가)"}
