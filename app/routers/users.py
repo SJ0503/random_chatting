@@ -215,3 +215,41 @@ def delete_user(
     db.commit()
 
     return {"message": "탈퇴 처리 완료 (24시간 이내 재가입 불가)"}
+
+@router.post("/send-verification-code-for-findPW")
+def send_verification_code(email: str, db: Session = Depends(get_db)):
+    existing_user = db.query(models.User).filter(models.User.user_email == email).first()
+    
+       # ✅ 기존 탈퇴 사용자라면 24시간 제한 확인
+    if existing_user:
+        if existing_user.user_delete_time:
+            time_since_deleted = now_kst - existing_user.user_delete_time
+            if time_since_deleted< timedelta(days=1):
+                print(timedelta)
+                raise HTTPException(status_code=403, detail="탈퇴 진행중인 사용자 입니다.")
+    else:
+         raise HTTPException(status_code=400, detail="등록된 이메일이 아닙니다.")
+
+    verification_code = auth.generate_verification_code(email)
+
+    send_email(
+        to_email=email,
+        subject="비밀번호 재설정이메일 인증번호",
+        body=f"MyChat 인증번호는 {verification_code}입니다. 5분 내에 입력해주세요."
+    )
+
+    return {"message": "인증번호가 이메일로 전송되었습니다"}
+
+@router.patch("/reset-password")
+def reset_password(data: schemas.PasswordReset, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.user_email == data.email).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="해당 이메일의 사용자가 존재하지 않습니다.")
+
+    hashed_pw = auth.hash_password(data.new_password)
+    user.user_password = hashed_pw
+    user.user_updated_at = now_kst
+
+    db.commit()
+    return {"message": "비밀번호가 성공적으로 변경되었습니다."}

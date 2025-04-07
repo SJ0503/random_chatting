@@ -53,3 +53,9 @@ class UserUpdate(BaseModel):
 
     class Config:
         from_attributes = True  # SQLAlchemy ORM 객체를 Pydantic 모델로 변환
+
+
+class PasswordReset(BaseModel):
+    email: EmailStr
+    new_password: str
+
