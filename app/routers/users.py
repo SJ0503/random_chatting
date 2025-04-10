@@ -75,10 +75,11 @@ def login(data: schemas.LoginRequest, response: Response, db: Session = Depends(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
+        secure=False,
         samesite="Lax",
         max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
     )
+    print(access_token)
     return {
         "accessToken": access_token,
         "user": {
